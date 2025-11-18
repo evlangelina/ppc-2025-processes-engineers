@@ -1,4 +1,10 @@
 #include <gtest/gtest.h>
+#include <mpi.h>
+
+#include <algorithm>
+#include <limits>
+#include <random>
+#include <vector>
 
 #include "bortsova_a_max_elem_vector/common/include/common.hpp"
 #include "bortsova_a_max_elem_vector/mpi/include/ops_mpi.hpp"
@@ -8,15 +14,38 @@
 namespace bortsova_a_max_elem_vector {
 
 class BortsovaAMaxElemVectorPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int kCount_ = 100;
+  const size_t kCount_ = 250000000;  
   InType input_data_{};
+  int expected_max_ = 0;
 
   void SetUp() override {
-    input_data_ = kCount_;
+    
+    std::vector<int> vec(kCount_);
+    std::mt19937 gen(12345);  
+    std::uniform_int_distribution<int> dist(-1000000, 1000000);
+    
+    for (size_t i = 0; i < kCount_; ++i) {
+      vec[i] = dist(gen);
+    }
+    
+    expected_max_ = 2000000;
+    vec[kCount_ / 2] = expected_max_;
+    
+    input_data_.data = std::move(vec);
+    
+    if (input_data_.data.empty()) {
+      GTEST_SKIP() << "Skipping test with empty vector";
+    }
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return input_data_ == output_data;
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
+    if (rank == 0) {
+      return output_data == expected_max_;
+    }
+    return true;  
   }
 
   InType GetTestInputData() final {
