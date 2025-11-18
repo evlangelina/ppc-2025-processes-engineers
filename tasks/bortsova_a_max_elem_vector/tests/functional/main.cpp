@@ -5,7 +5,6 @@
 #include <array>
 #include <cstddef>
 #include <limits>
-#include <random>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -41,17 +40,13 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
     int initialized = 0;
     MPI_Initialized(&initialized);
     if (initialized == 0) {
-      int expected_max =
-          *std::max_element(input_data_.data.begin(), input_data_.data.end());  // NOLINT(modernize-use-ranges)
-      return expected_max == output_data;
+      return ComputeMaxValue(input_data_.data) == output_data;
     }
 
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0) {
-      int expected_max =
-          *std::max_element(input_data_.data.begin(), input_data_.data.end());  // NOLINT(modernize-use-ranges)
-      return (expected_max == output_data);
+      return ComputeMaxValue(input_data_.data) == output_data;
     }
     return true;
   }
@@ -60,20 +55,39 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
     return input_data_;
   }
 
- private:
+private:
   InType input_data_;
 };
 
 namespace {
 
+int ComputeMaxValue(const std::vector<int> &data) {
+  if (data.empty()) {
+    return std::numeric_limits<int>::min();
+  }
+  int current_max = data.front();
+  for (std::size_t i = 1; i < data.size(); ++i) {
+    if (data[i] > current_max) {
+      current_max = data[i];
+    }
+  }
+  return current_max;
+}
+
+int GenerateDeterministicValue(std::size_t index, int max_value) {
+  constexpr int kMinValue = -100000;
+  const int safe_upper_bound = std::max(max_value - 1, kMinValue + 10);
+  const int range = safe_upper_bound - kMinValue;
+  const auto raw = static_cast<int>((index * 3 + 5) % range);
+  return kMinValue + raw;
+}
+
 std::vector<int> CreateVector(size_t size, int max_value, size_t max_position) {
   std::vector<int> vec(size);
-  std::mt19937 gen(42);  // NOLINT(cert-msc51-cpp)
-  std::uniform_int_distribution<int> dist(-100000, max_value - 1);
-
-  for (size_t i = 0; i < size; ++i) {
-    vec[i] = dist(gen);
-  }
+  std::iota(vec.begin(), vec.end(), -static_cast<int>(size));
+  std::transform(vec.begin(), vec.end(), vec.begin(), [](int value) { 
+    return value * 2 + 3; 
+  });
   if (max_position < size) {
     vec[max_position] = max_value;
   }

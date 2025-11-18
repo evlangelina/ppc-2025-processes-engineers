@@ -2,7 +2,6 @@
 #include <mpi.h>
 
 #include <cstddef>
-#include <random>
 #include <utility>
 #include <vector>
 
@@ -18,13 +17,18 @@ class BortsovaAMaxElemVectorPerfTests : public ppc::util::BaseRunPerfTests<InTyp
   InType input_data_{};
   int expected_max_ = 0;
 
+  static int GenerateLargeVectorValue(std::size_t index) {
+    constexpr int kMin = -1000000;
+    constexpr int kMod = 3'999'997;
+    const auto raw = static_cast<int>((static_cast<uint64_t>(index + 1) * 48271 + 12345) % kMod);
+    const int range = 2'000'000;
+    return kMin + (raw % range);
+  }
+
   void SetUp() override {
     std::vector<int> vec(kCount_);
-    std::mt19937 gen(12345);  // NOLINT(cert-msc51-cpp)
-    std::uniform_int_distribution<int> dist(-1000000, 1000000);
-
     for (size_t i = 0; i < kCount_; ++i) {
-      vec[i] = dist(gen);
+      vec[i] = GenerateLargeVectorValue(i);
     }
 
     expected_max_ = 2000000;
