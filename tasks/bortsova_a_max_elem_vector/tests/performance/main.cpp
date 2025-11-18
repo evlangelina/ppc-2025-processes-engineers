@@ -34,9 +34,14 @@ class BortsovaAMaxElemVectorPerfTests : public ppc::util::BaseRunPerfTests<InTyp
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+    if (initialized == 0) {
+      return output_data == expected_max_;
+    }
+
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     if (rank == 0) {
       return output_data == expected_max_;
     }

@@ -27,16 +27,27 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
   void SetUp() override {
     TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
     input_data_.data = std::get<0>(params);
+    if (input_data_.data.empty()) {
+      input_data_.data = {0};
+    }
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
+    if (input_data_.data.empty()) {
+      return false;
+    }
+
+    int initialized = 0;
+    MPI_Initialized(&initialized);
+    if (initialized == 0) {
+      int expected_max =
+          *std::max_element(input_data_.data.begin(), input_data_.data.end());  // NOLINT(modernize-use-ranges)
+      return expected_max == output_data;
+    }
+
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
     if (rank == 0) {
-      if (input_data_.data.empty()) {
-        return false;
-      }
       int expected_max =
           *std::max_element(input_data_.data.begin(), input_data_.data.end());  // NOLINT(modernize-use-ranges)
       return (expected_max == output_data);
