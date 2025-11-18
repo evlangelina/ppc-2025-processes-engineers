@@ -61,8 +61,8 @@ inline GeneratedData BuildDataset(const TestType &test_case) {
       }
       result.values.assign(test_case.size, static_cast<ValueType>(77));
       const std::size_t plateau_start = test_case.size / 2;
-      const std::size_t plateau_length = std::min<std::size_t>(static_cast<std::size_t>(321),
-                                                               test_case.size - ClampIndex(plateau_start, test_case.size));
+      const std::size_t plateau_length = std::min<std::size_t>(
+          static_cast<std::size_t>(321), test_case.size - ClampIndex(plateau_start, test_case.size));
       for (std::size_t i = 0; i < plateau_length && plateau_start + i < result.values.size(); ++i) {
         result.values[plateau_start + i] = static_cast<ValueType>(580);
       }
@@ -99,4 +99,3 @@ inline GeneratedData BuildDataset(const TestType &test_case) {
 }
 
 }  // namespace bortsova_a_max_elem_vector::test_utils
-

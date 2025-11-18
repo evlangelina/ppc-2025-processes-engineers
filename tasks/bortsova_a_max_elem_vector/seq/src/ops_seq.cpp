@@ -24,7 +24,7 @@ bool bortsova_a_max_elem_vectorMPISEQ::PreProcessingImpl() {
 
 bool bortsova_a_max_elem_vectorMPISEQ::RunImpl() {
   const auto &vec = GetInput().data;
-  
+
   if (vec.empty()) {
     return false;
   }

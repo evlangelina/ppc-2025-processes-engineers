@@ -19,7 +19,7 @@ bortsova_a_max_elem_vectorMPI::bortsova_a_max_elem_vectorMPI(const InType &in) {
 bool bortsova_a_max_elem_vectorMPI::ValidationImpl() {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  
+
   if (rank == 0) {
     return !GetInput().data.empty();
   }
@@ -31,20 +31,20 @@ bool bortsova_a_max_elem_vectorMPI::PreProcessingImpl() {
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  
+
   GetOutput() = std::numeric_limits<int>::min();
-  
+
   int vec_size = 0;
   if (rank == 0) {
     vec_size = static_cast<int>(GetInput().data.size());
   }
-  
+
   MPI_Bcast(&vec_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
+
   if (vec_size == 0) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -53,44 +53,44 @@ bool bortsova_a_max_elem_vectorMPI::RunImpl() {
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  
+
   std::vector<int> vec;
   int vec_size = 0;
-  
+
   if (rank == 0) {
     vec = GetInput().data;
     vec_size = static_cast<int>(vec.size());
   }
-  
+
   MPI_Bcast(&vec_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
+
   if (vec_size == 0) {
     return false;
   }
-  
+
   int chunk_size = vec_size / size;
   int remainder = vec_size % size;
-  
+
   std::vector<int> sendcounts(size);
   std::vector<int> displs(size);
-  
+
   int offset = 0;
   for (int i = 0; i < size; i++) {
     sendcounts[i] = chunk_size + (i < remainder ? 1 : 0);
     displs[i] = offset;
     offset += sendcounts[i];
   }
-  
+
   std::vector<int> local_data(sendcounts[rank]);
-  
+
   if (rank == 0) {
-    MPI_Scatterv(vec.data(), sendcounts.data(), displs.data(), MPI_INT,
-                 local_data.data(), sendcounts[rank], MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(vec.data(), sendcounts.data(), displs.data(), MPI_INT, local_data.data(), sendcounts[rank], MPI_INT, 0,
+                 MPI_COMM_WORLD);
   } else {
-    MPI_Scatterv(nullptr, sendcounts.data(), displs.data(), MPI_INT,
-                 local_data.data(), sendcounts[rank], MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(nullptr, sendcounts.data(), displs.data(), MPI_INT, local_data.data(), sendcounts[rank], MPI_INT, 0,
+                 MPI_COMM_WORLD);
   }
-  
+
   int local_max = std::numeric_limits<int>::min();
   if (!local_data.empty()) {
     local_max = local_data[0];
@@ -100,14 +100,14 @@ bool bortsova_a_max_elem_vectorMPI::RunImpl() {
       }
     }
   }
-  
+
   int global_max = std::numeric_limits<int>::min();
   MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
-  
+
   if (rank == 0) {
     GetOutput() = global_max;
   }
-  
+
   return true;
 }
 
