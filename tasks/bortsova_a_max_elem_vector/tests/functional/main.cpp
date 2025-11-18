@@ -55,24 +55,24 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
     return input_data_;
   }
 
-private:
+ private:
+  static int ComputeMaxValue(const std::vector<int> &data) {
+    if (data.empty()) {
+      return std::numeric_limits<int>::min();
+    }
+    int current_max = data.front();
+    for (std::size_t i = 1; i < data.size(); ++i) {
+      if (data[i] > current_max) {
+        current_max = data[i];
+      }
+    }
+    return current_max;
+  }
+
   InType input_data_;
 };
 
 namespace {
-
-int ComputeMaxValue(const std::vector<int> &data) {
-  if (data.empty()) {
-    return std::numeric_limits<int>::min();
-  }
-  int current_max = data.front();
-  for (std::size_t i = 1; i < data.size(); ++i) {
-    if (data[i] > current_max) {
-      current_max = data[i];
-    }
-  }
-  return current_max;
-}
 
 int GenerateDeterministicValue(std::size_t index, int max_value) {
   constexpr int kMinValue = -100000;
@@ -85,9 +85,7 @@ int GenerateDeterministicValue(std::size_t index, int max_value) {
 std::vector<int> CreateVector(size_t size, int max_value, size_t max_position) {
   std::vector<int> vec(size);
   std::iota(vec.begin(), vec.end(), -static_cast<int>(size));
-  std::transform(vec.begin(), vec.end(), vec.begin(), [](int value) { 
-    return value * 2 + 3; 
-  });
+  std::transform(vec.begin(), vec.end(), vec.begin(), [](int value) { return value * 2 + 3; });
   if (max_position < size) {
     vec[max_position] = max_value;
   }
