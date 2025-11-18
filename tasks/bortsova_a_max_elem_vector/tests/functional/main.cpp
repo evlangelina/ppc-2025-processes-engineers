@@ -74,14 +74,6 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
 
 namespace {
 
-int GenerateDeterministicValue(std::size_t index, int max_value) {
-  constexpr int kMinValue = -100000;
-  const int safe_upper_bound = std::max(max_value - 1, kMinValue + 10);
-  const int range = safe_upper_bound - kMinValue;
-  const auto raw = static_cast<int>((index * 3 + 5) % range);
-  return kMinValue + raw;
-}
-
 std::vector<int> CreateVector(size_t size, int max_value, size_t max_position) {
   std::vector<int> vec(size);
   std::iota(vec.begin(), vec.end(), -static_cast<int>(size));
