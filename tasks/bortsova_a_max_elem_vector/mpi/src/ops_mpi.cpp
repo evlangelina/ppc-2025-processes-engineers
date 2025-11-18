@@ -3,6 +3,7 @@
 #include <mpi.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <limits>
 #include <vector>
 
@@ -10,13 +11,13 @@
 
 namespace bortsova_a_max_elem_vector {
 
-bortsova_a_max_elem_vectorMPI::bortsova_a_max_elem_vectorMPI(const InType &in) {
+BortsovaAMaxElemVectorMpi::BortsovaAMaxElemVectorMpi(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = std::numeric_limits<int>::min();
 }
 
-bool bortsova_a_max_elem_vectorMPI::ValidationImpl() {
+bool BortsovaAMaxElemVectorMpi::ValidationImpl() {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -26,7 +27,7 @@ bool bortsova_a_max_elem_vectorMPI::ValidationImpl() {
   return true;
 }
 
-bool bortsova_a_max_elem_vectorMPI::PreProcessingImpl() {
+bool BortsovaAMaxElemVectorMpi::PreProcessingImpl() {
   int rank = 0;
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -41,14 +42,10 @@ bool bortsova_a_max_elem_vectorMPI::PreProcessingImpl() {
 
   MPI_Bcast(&vec_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  if (vec_size == 0) {
-    return false;
-  }
-
-  return true;
+  return vec_size != 0;
 }
 
-bool bortsova_a_max_elem_vectorMPI::RunImpl() {
+bool BortsovaAMaxElemVectorMpi::RunImpl() {
   int rank = 0;
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -95,9 +92,7 @@ bool bortsova_a_max_elem_vectorMPI::RunImpl() {
   if (!local_data.empty()) {
     local_max = local_data[0];
     for (size_t i = 1; i < local_data.size(); i++) {
-      if (local_data[i] > local_max) {
-        local_max = local_data[i];
-      }
+      local_max = std::max(local_data[i], local_max);
     }
   }
 
@@ -111,7 +106,7 @@ bool bortsova_a_max_elem_vectorMPI::RunImpl() {
   return true;
 }
 
-bool bortsova_a_max_elem_vectorMPI::PostProcessingImpl() {
+bool BortsovaAMaxElemVectorMpi::PostProcessingImpl() {
   // If RunImpl succeeded, the output is valid (even if it's INT_MIN)
   // No need to check rank here
   return true;

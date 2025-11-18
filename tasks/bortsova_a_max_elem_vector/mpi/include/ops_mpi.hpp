@@ -5,12 +5,12 @@
 
 namespace bortsova_a_max_elem_vector {
 
-class bortsova_a_max_elem_vectorMPI : public BaseTask {
+class BortsovaAMaxElemVectorMpi : public BaseTask {
  public:
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
     return ppc::task::TypeOfTask::kMPI;
   }
-  explicit bortsova_a_max_elem_vectorMPI(const InType &in);
+  explicit BortsovaAMaxElemVectorMpi(const InType &in);
 
  private:
   bool ValidationImpl() override;

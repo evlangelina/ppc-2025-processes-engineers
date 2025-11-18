@@ -4,14 +4,9 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <cstdint>
-#include <limits>
-#include <numeric>
 #include <random>
-#include <stdexcept>
 #include <string>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 #include "bortsova_a_max_elem_vector/common/include/common.hpp"
@@ -32,10 +27,6 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
   void SetUp() override {
     TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
     input_data_.data = std::get<0>(params);
-
-    if (input_data_.data.empty()) {
-      GTEST_SKIP() << "Skipping test with empty vector";
-    }
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
@@ -46,7 +37,7 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
       if (input_data_.data.empty()) {
         return false;
       }
-      int expected_max = *std::max_element(input_data_.data.begin(), input_data_.data.end());
+      int expected_max = *std::max_element(input_data_.data.begin(), input_data_.data.end());  // NOLINT(modernize-use-ranges)
       return (expected_max == output_data);
     }
     return true;
@@ -64,7 +55,7 @@ namespace {
 
 std::vector<int> CreateVector(size_t size, int max_value, size_t max_position) {
   std::vector<int> vec(size);
-  std::mt19937 gen(42);  // Fixed seed for deterministic tests
+  std::mt19937 gen(42);  // NOLINT(cert-msc51-cpp)
   std::uniform_int_distribution<int> dist(-100000, max_value - 1);
 
   for (size_t i = 0; i < size; ++i) {
@@ -152,8 +143,8 @@ const std::array<TestType, 42> kTestParam = {
     std::make_tuple(std::vector<int>{-100, -50, 0, 50, 100, 25, -25}, "symmetric_around_zero")};
 
 const auto kTestTasksList = std::tuple_cat(
-    ppc::util::AddFuncTask<bortsova_a_max_elem_vectorMPI, InType>(kTestParam, PPC_SETTINGS_bortsova_a_max_elem_vector),
-    ppc::util::AddFuncTask<bortsova_a_max_elem_vectorMPISEQ, InType>(kTestParam,
+    ppc::util::AddFuncTask<BortsovaAMaxElemVectorMpi, InType>(kTestParam, PPC_SETTINGS_bortsova_a_max_elem_vector),
+    ppc::util::AddFuncTask<BortsovaAMaxElemVectorSeq, InType>(kTestParam,
                                                                      PPC_SETTINGS_bortsova_a_max_elem_vector));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);

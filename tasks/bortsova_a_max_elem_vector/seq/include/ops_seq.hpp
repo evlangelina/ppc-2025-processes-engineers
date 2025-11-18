@@ -5,12 +5,12 @@
 
 namespace bortsova_a_max_elem_vector {
 
-class bortsova_a_max_elem_vectorMPISEQ : public BaseTask {
+class BortsovaAMaxElemVectorSeq : public BaseTask {
  public:
   static constexpr ppc::task::TypeOfTask GetStaticTypeOfTask() {
     return ppc::task::TypeOfTask::kSEQ;
   }
-  explicit bortsova_a_max_elem_vectorMPISEQ(const InType &in);
+  explicit BortsovaAMaxElemVectorSeq(const InType &in);
 
  private:
   bool ValidationImpl() override;

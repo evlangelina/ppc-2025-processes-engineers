@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 
-#include <algorithm>
-#include <limits>
+#include <cstddef>
 #include <random>
+#include <utility>
 #include <vector>
 
 #include "bortsova_a_max_elem_vector/common/include/common.hpp"
@@ -20,7 +20,7 @@ class BortsovaAMaxElemVectorPerfTests : public ppc::util::BaseRunPerfTests<InTyp
 
   void SetUp() override {
     std::vector<int> vec(kCount_);
-    std::mt19937 gen(12345);
+    std::mt19937 gen(12345);  // NOLINT(cert-msc51-cpp)
     std::uniform_int_distribution<int> dist(-1000000, 1000000);
 
     for (size_t i = 0; i < kCount_; ++i) {
@@ -31,10 +31,6 @@ class BortsovaAMaxElemVectorPerfTests : public ppc::util::BaseRunPerfTests<InTyp
     vec[kCount_ / 2] = expected_max_;
 
     input_data_.data = std::move(vec);
-
-    if (input_data_.data.empty()) {
-      GTEST_SKIP() << "Skipping test with empty vector";
-    }
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
@@ -57,7 +53,7 @@ TEST_P(BortsovaAMaxElemVectorPerfTests, RunPerfModes) {
 }
 
 const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, bortsova_a_max_elem_vectorMPI, bortsova_a_max_elem_vectorMPISEQ>(
+    ppc::util::MakeAllPerfTasks<InType, BortsovaAMaxElemVectorMpi, BortsovaAMaxElemVectorSeq>(
         PPC_SETTINGS_bortsova_a_max_elem_vector);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
