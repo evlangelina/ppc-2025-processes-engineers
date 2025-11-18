@@ -25,10 +25,10 @@ bool BortsovaAMaxElemVectorMpi::ValidationImpl() {
   if (rank == 0) {
     is_valid = !GetInput().data.empty() ? 1 : 0;
   }
-  
+
   // Broadcast validation result to all processes
   MPI_Bcast(&is_valid, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
+
   return is_valid == 1;
 }
 
