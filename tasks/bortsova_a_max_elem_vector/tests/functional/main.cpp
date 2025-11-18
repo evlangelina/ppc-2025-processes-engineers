@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <random>
+#include <limits>
 #include <string>
 #include <tuple>
 #include <vector>
