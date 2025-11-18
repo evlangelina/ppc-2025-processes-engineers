@@ -62,9 +62,7 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
     }
     int current_max = data.front();
     for (std::size_t i = 1; i < data.size(); ++i) {
-      if (data[i] > current_max) {
-        current_max = data[i];
-      }
+      current_max = std::max(data[i], current_max);
     }
     return current_max;
   }
@@ -76,8 +74,10 @@ namespace {
 
 std::vector<int> CreateVector(size_t size, int max_value, size_t max_position) {
   std::vector<int> vec(size);
-  std::iota(vec.begin(), vec.end(), -static_cast<int>(size));
-  std::transform(vec.begin(), vec.end(), vec.begin(), [](int value) { return value * 2 + 3; });
+  for (size_t i = 0; i < size; ++i) {
+    const int base = -static_cast<int>(size) + static_cast<int>(i);
+    vec[i] = (base * 2) + 3;
+  }
   if (max_position < size) {
     vec[max_position] = max_value;
   }
