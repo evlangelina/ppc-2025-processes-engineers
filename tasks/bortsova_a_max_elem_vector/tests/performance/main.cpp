@@ -52,9 +52,8 @@ TEST_P(BortsovaAMaxElemVectorPerfTests, RunPerfModes) {
   ExecuteTest(GetParam());
 }
 
-const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, BortsovaAMaxElemVectorMpi, BortsovaAMaxElemVectorSeq>(
-        PPC_SETTINGS_bortsova_a_max_elem_vector);
+const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, BortsovaAMaxElemVectorMpi, BortsovaAMaxElemVectorSeq>(
+    PPC_SETTINGS_bortsova_a_max_elem_vector);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 

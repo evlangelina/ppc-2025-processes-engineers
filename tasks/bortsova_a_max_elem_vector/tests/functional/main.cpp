@@ -37,7 +37,8 @@ class BortsovaAMaxElemVectorFuncTests : public ppc::util::BaseRunFuncTests<InTyp
       if (input_data_.data.empty()) {
         return false;
       }
-      int expected_max = *std::max_element(input_data_.data.begin(), input_data_.data.end());  // NOLINT(modernize-use-ranges)
+      int expected_max =
+          *std::max_element(input_data_.data.begin(), input_data_.data.end());  // NOLINT(modernize-use-ranges)
       return (expected_max == output_data);
     }
     return true;
@@ -144,8 +145,7 @@ const std::array<TestType, 42> kTestParam = {
 
 const auto kTestTasksList = std::tuple_cat(
     ppc::util::AddFuncTask<BortsovaAMaxElemVectorMpi, InType>(kTestParam, PPC_SETTINGS_bortsova_a_max_elem_vector),
-    ppc::util::AddFuncTask<BortsovaAMaxElemVectorSeq, InType>(kTestParam,
-                                                                     PPC_SETTINGS_bortsova_a_max_elem_vector));
+    ppc::util::AddFuncTask<BortsovaAMaxElemVectorSeq, InType>(kTestParam, PPC_SETTINGS_bortsova_a_max_elem_vector));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
