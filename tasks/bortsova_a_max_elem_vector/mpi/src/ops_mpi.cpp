@@ -21,10 +21,15 @@ bool BortsovaAMaxElemVectorMpi::ValidationImpl() {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  int is_valid = 0;
   if (rank == 0) {
-    return !GetInput().data.empty();
+    is_valid = !GetInput().data.empty() ? 1 : 0;
   }
-  return true;
+  
+  // Broadcast validation result to all processes
+  MPI_Bcast(&is_valid, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  return is_valid == 1;
 }
 
 bool BortsovaAMaxElemVectorMpi::PreProcessingImpl() {
