@@ -26,7 +26,6 @@ bool BortsovaAMaxElemVectorMpi::ValidationImpl() {
     is_valid = !GetInput().data.empty() ? 1 : 0;
   }
 
-  // Broadcast validation result to all processes
   MPI_Bcast(&is_valid, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   return is_valid == 1;
@@ -112,9 +111,8 @@ bool BortsovaAMaxElemVectorMpi::RunImpl() {
 }
 
 bool BortsovaAMaxElemVectorMpi::PostProcessingImpl() {
-  // If RunImpl succeeded, the output is valid (even if it's INT_MIN)
-  // No need to check rank here
   return true;
 }
 
 }  // namespace bortsova_a_max_elem_vector
+

@@ -40,8 +40,8 @@ bool BortsovaAMaxElemVectorSeq::RunImpl() {
 }
 
 bool BortsovaAMaxElemVectorSeq::PostProcessingImpl() {
-  // If RunImpl succeeded, the output is valid (even if it's INT_MIN)
   return true;
 }
 
 }  // namespace bortsova_a_max_elem_vector
+
