@@ -44,4 +44,3 @@ bool BortsovaAMaxElemVectorSeq::PostProcessingImpl() {
 }
 
 }  // namespace bortsova_a_max_elem_vector
-

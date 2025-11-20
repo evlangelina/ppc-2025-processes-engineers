@@ -115,4 +115,3 @@ bool BortsovaAMaxElemVectorMpi::PostProcessingImpl() {
 }
 
 }  // namespace bortsova_a_max_elem_vector
-
