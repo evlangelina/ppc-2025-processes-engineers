@@ -17,6 +17,10 @@ class BortsovaATransmissionGatherMPI : public BaseTask {
   bool PreProcessingImpl() override;
   bool RunImpl() override;
   bool PostProcessingImpl() override;
+
+  int world_rank_ = 0;
+  int world_size_ = 1;
+  int send_count_ = 0;
 };
 
 }  // namespace bortsova_a_transmission_gather
