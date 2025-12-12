@@ -2,7 +2,6 @@
 #include <mpi.h>
 
 #include <cstddef>
-#include <numeric>
 #include <string>
 #include <vector>
 
@@ -10,17 +9,20 @@
 #include "bortsova_a_transmission_gather/mpi/include/ops_mpi.hpp"
 #include "bortsova_a_transmission_gather/seq/include/ops_seq.hpp"
 #include "util/include/perf_test_util.hpp"
+#include "util/include/util.hpp"
 
 namespace bortsova_a_transmission_gather {
 
 class BortsovaATransmissionGatherPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  static constexpr int kDataSize = 100000;
+  static constexpr int kDataSize = 150000000;
   InType input_data_{};
   bool is_mpi_test_ = false;
 
   void SetUp() override {
     input_data_.send_data.resize(kDataSize);
-    std::iota(input_data_.send_data.begin(), input_data_.send_data.end(), 1.0);
+    for (int idx = 0; idx < kDataSize; ++idx) {
+      input_data_.send_data[static_cast<std::size_t>(idx)] = 1.0 + static_cast<double>(idx);
+    }
     input_data_.root = 0;
 
     std::string test_name = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kNameTest)>(GetParam());
@@ -42,8 +44,8 @@ class BortsovaATransmissionGatherPerfTests : public ppc::util::BaseRunPerfTests<
       return false;
     }
 
-    for (std::size_t i = 0; i < input_data_.send_data.size(); ++i) {
-      if (output_data.recv_data[i] != input_data_.send_data[i]) {
+    for (std::size_t ii = 0; ii < input_data_.send_data.size(); ++ii) {
+      if (output_data.recv_data[ii] != input_data_.send_data[ii]) {
         return false;
       }
     }

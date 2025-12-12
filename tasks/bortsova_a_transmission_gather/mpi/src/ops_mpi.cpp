@@ -2,7 +2,6 @@
 
 #include <mpi.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <utility>
 #include <vector>
@@ -10,6 +9,29 @@
 #include "bortsova_a_transmission_gather/common/include/common.hpp"
 
 namespace bortsova_a_transmission_gather {
+
+namespace {
+
+void CopyReceivedData(std::vector<double> &gather_buffer, const std::vector<double> &recv_buffer,
+                      const std::vector<int> &flags_int, std::vector<bool> &received, int world_size, int local_count) {
+  for (int rank = 0; rank < world_size; ++rank) {
+    if (flags_int[static_cast<std::size_t>(rank)] != 0) {
+      std::size_t start_idx = static_cast<std::size_t>(rank) * static_cast<std::size_t>(local_count);
+      for (int jj = 0; jj < local_count; ++jj) {
+        gather_buffer[start_idx + static_cast<std::size_t>(jj)] = recv_buffer[start_idx + static_cast<std::size_t>(jj)];
+      }
+      received[static_cast<std::size_t>(rank)] = true;
+    }
+  }
+}
+
+void PrepareFlags(std::vector<int> &flags_int, const std::vector<bool> &received, int world_size) {
+  for (int rank = 0; rank < world_size; ++rank) {
+    flags_int[static_cast<std::size_t>(rank)] = static_cast<int>(received[static_cast<std::size_t>(rank)]);
+  }
+}
+
+}  // namespace
 
 BortsovaATransmissionGatherMPI::BortsovaATransmissionGatherMPI(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
@@ -22,11 +44,7 @@ bool BortsovaATransmissionGatherMPI::ValidationImpl() {
   MPI_Comm_size(MPI_COMM_WORLD, &world_size_);
 
   int root = GetInput().root;
-  if (root < 0 || root >= world_size_) {
-    return false;
-  }
-
-  return true;
+  return root >= 0 && root < world_size_;
 }
 
 bool BortsovaATransmissionGatherMPI::PreProcessingImpl() {
@@ -50,61 +68,69 @@ bool BortsovaATransmissionGatherMPI::RunImpl() {
   std::vector<double> gather_buffer(total_size, 0.0);
   std::vector<bool> received(static_cast<std::size_t>(world_size_), false);
 
-  std::copy(send_data.begin(), send_data.end(),
-            gather_buffer.begin() + (static_cast<std::ptrdiff_t>(world_rank_) * local_count));
+  std::size_t offset = static_cast<std::size_t>(world_rank_) * static_cast<std::size_t>(local_count);
+  for (std::size_t idx = 0; idx < send_data.size(); ++idx) {
+    gather_buffer[offset + idx] = send_data[idx];
+  }
   received[static_cast<std::size_t>(world_rank_)] = true;
 
-  int step = 1;
-  while (step < world_size_) {
-    if ((world_rank_ % (2 * step)) == 0) {
-      int source = world_rank_ + step;
-      if (source < world_size_) {
-        std::vector<double> recv_buffer(total_size, 0.0);
-        std::vector<bool> recv_flags(static_cast<std::size_t>(world_size_), false);
+  TreeGather(gather_buffer, received, local_count, static_cast<int>(total_size));
 
-        MPI_Status status;
-        MPI_Recv(recv_buffer.data(), static_cast<int>(total_size), MPI_DOUBLE, source, 0, MPI_COMM_WORLD, &status);
-
-        std::vector<int> flags_int(static_cast<std::size_t>(world_size_), 0);
-        MPI_Recv(flags_int.data(), world_size_, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
-
-        for (int r = 0; r < world_size_; ++r) {
-          if (flags_int[static_cast<std::size_t>(r)] != 0) {
-            std::size_t start_idx = static_cast<std::size_t>(r) * static_cast<std::size_t>(local_count);
-            for (int j = 0; j < local_count; ++j) {
-              gather_buffer[start_idx + static_cast<std::size_t>(j)] =
-                  recv_buffer[start_idx + static_cast<std::size_t>(j)];
-            }
-            received[static_cast<std::size_t>(r)] = true;
-          }
-        }
-      }
-    } else if ((world_rank_ % step) == 0) {
-      int dest = world_rank_ - step;
-      MPI_Send(gather_buffer.data(), static_cast<int>(total_size), MPI_DOUBLE, dest, 0, MPI_COMM_WORLD);
-
-      std::vector<int> flags_int(static_cast<std::size_t>(world_size_), 0);
-      for (int r = 0; r < world_size_; ++r) {
-        flags_int[static_cast<std::size_t>(r)] = received[static_cast<std::size_t>(r)] ? 1 : 0;
-      }
-      MPI_Send(flags_int.data(), world_size_, MPI_INT, dest, 1, MPI_COMM_WORLD);
-      break;
-    }
-    step *= 2;
-  }
-
-  if (world_rank_ == 0 && root != 0) {
-    MPI_Send(gather_buffer.data(), static_cast<int>(total_size), MPI_DOUBLE, root, 2, MPI_COMM_WORLD);
-  } else if (world_rank_ == root && root != 0) {
-    MPI_Status status;
-    MPI_Recv(gather_buffer.data(), static_cast<int>(total_size), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, &status);
-  }
+  TransferToRoot(gather_buffer, root, static_cast<int>(total_size));
 
   MPI_Bcast(gather_buffer.data(), static_cast<int>(total_size), MPI_DOUBLE, root, MPI_COMM_WORLD);
 
   GetOutput().recv_data = std::move(gather_buffer);
 
   return true;
+}
+
+void BortsovaATransmissionGatherMPI::TreeGather(std::vector<double> &gather_buffer, std::vector<bool> &received,
+                                                int local_count, int total_size) {
+  int step = 1;
+  while (step < world_size_) {
+    if ((world_rank_ % (2 * step)) == 0) {
+      int source = world_rank_ + step;
+      if (source < world_size_) {
+        ReceiveFromChild(gather_buffer, received, source, local_count, total_size);
+      }
+    } else if ((world_rank_ % step) == 0) {
+      SendToParent(gather_buffer, received, step, total_size);
+      break;
+    }
+    step *= 2;
+  }
+}
+
+void BortsovaATransmissionGatherMPI::ReceiveFromChild(std::vector<double> &gather_buffer, std::vector<bool> &received,
+                                                      int source, int local_count, int total_size) {
+  std::vector<double> recv_buffer(static_cast<std::size_t>(total_size), 0.0);
+  std::vector<int> flags_int(static_cast<std::size_t>(world_size_), 0);
+
+  MPI_Status status;
+  MPI_Recv(recv_buffer.data(), total_size, MPI_DOUBLE, source, 0, MPI_COMM_WORLD, &status);
+  MPI_Recv(flags_int.data(), world_size_, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
+
+  CopyReceivedData(gather_buffer, recv_buffer, flags_int, received, world_size_, local_count);
+}
+
+void BortsovaATransmissionGatherMPI::SendToParent(std::vector<double> &gather_buffer, std::vector<bool> &received,
+                                                  int step, int total_size) {
+  int dest = world_rank_ - step;
+  MPI_Send(gather_buffer.data(), total_size, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD);
+
+  std::vector<int> flags_int(static_cast<std::size_t>(world_size_), 0);
+  PrepareFlags(flags_int, received, world_size_);
+  MPI_Send(flags_int.data(), world_size_, MPI_INT, dest, 1, MPI_COMM_WORLD);
+}
+
+void BortsovaATransmissionGatherMPI::TransferToRoot(std::vector<double> &gather_buffer, int root, int total_size) {
+  if (world_rank_ == 0 && root != 0) {
+    MPI_Send(gather_buffer.data(), total_size, MPI_DOUBLE, root, 2, MPI_COMM_WORLD);
+  } else if (world_rank_ == root && root != 0) {
+    MPI_Status status;
+    MPI_Recv(gather_buffer.data(), total_size, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, &status);
+  }
 }
 
 bool BortsovaATransmissionGatherMPI::PostProcessingImpl() {

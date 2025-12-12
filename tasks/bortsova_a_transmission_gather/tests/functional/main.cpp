@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 
-#include <algorithm>
 #include <array>
 #include <cstddef>
-#include <numeric>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -17,6 +16,16 @@
 
 namespace bortsova_a_transmission_gather {
 
+namespace {
+
+void FillWithSequence(std::vector<double> &vec, double start_val) {
+  for (std::size_t idx = 0; idx < vec.size(); ++idx) {
+    vec[idx] = start_val + static_cast<double>(idx);
+  }
+}
+
+}  // namespace
+
 class BortsovaATransmissionGatherFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
@@ -28,7 +37,7 @@ class BortsovaATransmissionGatherFuncTests : public ppc::util::BaseRunFuncTests<
     TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
     int count = std::get<0>(params);
     input_.send_data.resize(static_cast<std::size_t>(count));
-    std::iota(input_.send_data.begin(), input_.send_data.end(), 1.0);
+    FillWithSequence(input_.send_data, 1.0);
     input_.root = 0;
 
     std::string test_name = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kNameTest)>(GetParam());
@@ -50,10 +59,10 @@ class BortsovaATransmissionGatherFuncTests : public ppc::util::BaseRunFuncTests<
       return false;
     }
 
-    for (int r = 0; r < world_size; ++r) {
-      std::size_t offset = static_cast<std::size_t>(r) * input_.send_data.size();
-      for (std::size_t i = 0; i < input_.send_data.size(); ++i) {
-        if (output_data.recv_data[offset + i] != input_.send_data[i]) {
+    for (int rank = 0; rank < world_size; ++rank) {
+      std::size_t offset = static_cast<std::size_t>(rank) * input_.send_data.size();
+      for (std::size_t ii = 0; ii < input_.send_data.size(); ++ii) {
+        if (output_data.recv_data[offset + ii] != input_.send_data[ii]) {
           return false;
         }
       }
@@ -94,7 +103,7 @@ INSTANTIATE_TEST_SUITE_P(GatherTests, BortsovaATransmissionGatherFuncTests, kGte
 
 class BortsovaAGatherEdgeCasesTestsMPI : public ::testing::Test {
  protected:
-  void RunMPIGatherTest(const InType &input, int expected_count_per_rank) {
+  static void RunMPIGatherTest(const InType &input, int expected_count_per_rank) {
     auto task = std::make_shared<BortsovaATransmissionGatherMPI>(input);
     ASSERT_TRUE(task->Validation());
     ASSERT_TRUE(task->PreProcessing());
@@ -109,10 +118,10 @@ class BortsovaAGatherEdgeCasesTestsMPI : public ::testing::Test {
         static_cast<std::size_t>(expected_count_per_rank) * static_cast<std::size_t>(world_size);
     ASSERT_EQ(result.size(), expected_total);
 
-    for (int r = 0; r < world_size; ++r) {
-      std::size_t offset = static_cast<std::size_t>(r) * static_cast<std::size_t>(expected_count_per_rank);
-      for (std::size_t i = 0; i < input.send_data.size(); ++i) {
-        EXPECT_DOUBLE_EQ(result[offset + i], input.send_data[i]);
+    for (int rank = 0; rank < world_size; ++rank) {
+      std::size_t offset = static_cast<std::size_t>(rank) * static_cast<std::size_t>(expected_count_per_rank);
+      for (std::size_t ii = 0; ii < input.send_data.size(); ++ii) {
+        EXPECT_DOUBLE_EQ(result[offset + ii], input.send_data[ii]);
       }
     }
   }
@@ -134,7 +143,7 @@ TEST_F(BortsovaAGatherEdgeCasesTestsMPI, LargeDataGather) {
   }
   InType input;
   input.send_data.resize(1000);
-  std::iota(input.send_data.begin(), input.send_data.end(), 1.0);
+  FillWithSequence(input.send_data, 1.0);
   input.root = 0;
   RunMPIGatherTest(input, 1000);
 }
@@ -165,14 +174,14 @@ TEST_F(BortsovaAGatherEdgeCasesTestsMPI, TenElementsGather) {
   }
   InType input;
   input.send_data.resize(10);
-  std::iota(input.send_data.begin(), input.send_data.end(), 1.0);
+  FillWithSequence(input.send_data, 1.0);
   input.root = 0;
   RunMPIGatherTest(input, 10);
 }
 
 class BortsovaAGatherEdgeCasesTestsSEQ : public ::testing::Test {
  protected:
-  void RunSEQGatherTest(const InType &input, const std::vector<double> &expected) {
+  static void RunSEQGatherTest(const InType &input, const std::vector<double> &expected) {
     auto task = std::make_shared<BortsovaATransmissionGatherSEQ>(input);
     ASSERT_TRUE(task->Validation());
     ASSERT_TRUE(task->PreProcessing());
@@ -181,8 +190,8 @@ class BortsovaAGatherEdgeCasesTestsSEQ : public ::testing::Test {
 
     const auto &result = task->GetOutput().recv_data;
     ASSERT_EQ(result.size(), expected.size());
-    for (std::size_t i = 0; i < expected.size(); ++i) {
-      EXPECT_DOUBLE_EQ(result[i], expected[i]);
+    for (std::size_t ii = 0; ii < expected.size(); ++ii) {
+      EXPECT_DOUBLE_EQ(result[ii], expected[ii]);
     }
   }
 };
@@ -197,11 +206,11 @@ TEST_F(BortsovaAGatherEdgeCasesTestsSEQ, SingleElementGather) {
 TEST_F(BortsovaAGatherEdgeCasesTestsSEQ, LargeDataGather) {
   InType input;
   input.send_data.resize(1000);
-  std::iota(input.send_data.begin(), input.send_data.end(), 1.0);
+  FillWithSequence(input.send_data, 1.0);
   input.root = 0;
 
   std::vector<double> expected(1000);
-  std::iota(expected.begin(), expected.end(), 1.0);
+  FillWithSequence(expected, 1.0);
   RunSEQGatherTest(input, expected);
 }
 

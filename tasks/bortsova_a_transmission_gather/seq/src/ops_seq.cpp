@@ -1,6 +1,5 @@
 #include "bortsova_a_transmission_gather/seq/include/ops_seq.hpp"
 
-#include <utility>
 #include <vector>
 
 #include "bortsova_a_transmission_gather/common/include/common.hpp"
@@ -15,10 +14,7 @@ BortsovaATransmissionGatherSEQ::BortsovaATransmissionGatherSEQ(const InType &in)
 
 bool BortsovaATransmissionGatherSEQ::ValidationImpl() {
   int root = GetInput().root;
-  if (root != 0) {
-    return false;
-  }
-  return true;
+  return root == 0;
 }
 
 bool BortsovaATransmissionGatherSEQ::PreProcessingImpl() {
