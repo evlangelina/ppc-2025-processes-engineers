@@ -22,9 +22,9 @@ class BortsovaATransmissionGatherMPI : public BaseTask {
 
   void TreeGather(std::vector<double> &gather_buffer, std::vector<bool> &received, int local_count, int total_size);
   void ReceiveFromChild(std::vector<double> &gather_buffer, std::vector<bool> &received, int source, int local_count,
-                        int total_size);
-  void SendToParent(std::vector<double> &gather_buffer, std::vector<bool> &received, int step, int total_size);
-  void TransferToRoot(std::vector<double> &gather_buffer, int root, int total_size);
+                        int total_size) const;
+  void SendToParent(std::vector<double> &gather_buffer, std::vector<bool> &received, int step, int total_size) const;
+  void TransferToRoot(std::vector<double> &gather_buffer, int root, int total_size) const;
 
   int world_rank_ = 0;
   int world_size_ = 1;

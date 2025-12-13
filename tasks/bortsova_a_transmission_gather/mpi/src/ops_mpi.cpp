@@ -103,7 +103,7 @@ void BortsovaATransmissionGatherMPI::TreeGather(std::vector<double> &gather_buff
 }
 
 void BortsovaATransmissionGatherMPI::ReceiveFromChild(std::vector<double> &gather_buffer, std::vector<bool> &received,
-                                                      int source, int local_count, int total_size) {
+                                                      int source, int local_count, int total_size) const {
   std::vector<double> recv_buffer(static_cast<std::size_t>(total_size), 0.0);
   std::vector<int> flags_int(static_cast<std::size_t>(world_size_), 0);
 
@@ -115,7 +115,7 @@ void BortsovaATransmissionGatherMPI::ReceiveFromChild(std::vector<double> &gathe
 }
 
 void BortsovaATransmissionGatherMPI::SendToParent(std::vector<double> &gather_buffer, std::vector<bool> &received,
-                                                  int step, int total_size) {
+                                                  int step, int total_size) const {
   int dest = world_rank_ - step;
   MPI_Send(gather_buffer.data(), total_size, MPI_DOUBLE, dest, 0, MPI_COMM_WORLD);
 
@@ -124,7 +124,7 @@ void BortsovaATransmissionGatherMPI::SendToParent(std::vector<double> &gather_bu
   MPI_Send(flags_int.data(), world_size_, MPI_INT, dest, 1, MPI_COMM_WORLD);
 }
 
-void BortsovaATransmissionGatherMPI::TransferToRoot(std::vector<double> &gather_buffer, int root, int total_size) {
+void BortsovaATransmissionGatherMPI::TransferToRoot(std::vector<double> &gather_buffer, int root, int total_size) const {
   if (world_rank_ == 0 && root != 0) {
     MPI_Send(gather_buffer.data(), total_size, MPI_DOUBLE, root, 2, MPI_COMM_WORLD);
   } else if (world_rank_ == root && root != 0) {
