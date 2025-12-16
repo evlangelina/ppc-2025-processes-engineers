@@ -124,7 +124,8 @@ void BortsovaATransmissionGatherMPI::SendToParent(std::vector<double> &gather_bu
   MPI_Send(flags_int.data(), world_size_, MPI_INT, dest, 1, MPI_COMM_WORLD);
 }
 
-void BortsovaATransmissionGatherMPI::TransferToRoot(std::vector<double> &gather_buffer, int root, int total_size) const {
+void BortsovaATransmissionGatherMPI::TransferToRoot(std::vector<double> &gather_buffer, int root,
+                                                    int total_size) const {
   if (world_rank_ == 0 && root != 0) {
     MPI_Send(gather_buffer.data(), total_size, MPI_DOUBLE, root, 2, MPI_COMM_WORLD);
   } else if (world_rank_ == root && root != 0) {
