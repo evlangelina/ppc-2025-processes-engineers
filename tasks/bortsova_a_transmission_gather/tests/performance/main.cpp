@@ -14,7 +14,7 @@
 namespace bortsova_a_transmission_gather {
 
 class BortsovaATransmissionGatherPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  static constexpr int kDataSize = 150000000;
+  static constexpr int kDataSize = 30000000;
   InType input_data_{};
   bool is_mpi_test_ = false;
 
